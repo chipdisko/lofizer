@@ -5,11 +5,20 @@ import os
 def main(page: ft.Page):
     page.title = "オーディオコンバーター"
 
+    selected_files = []
 
     def on_input_file_selected(e: ft.FilePickerResultEvent):
         if e.files:
-            input_file.value = e.files[0].path
+            selected_files.extend(e.files)
+            update_file_list()
             page.update()
+
+    def update_file_list():
+        file_list.controls.clear()
+        for file in selected_files:
+            file_name = os.path.basename(file.path)  # フルパスからファイル名を抽出
+            file_list.controls.append(ft.Text(file_name))
+        page.update()
 
     def on_output_dir_selected(e: ft.FilePickerResultEvent):
         if e.path:
@@ -21,20 +30,19 @@ def main(page: ft.Page):
     page.overlay.extend([file_dialog, dir_dialog])  # ここでFilePickerをページに追加
 
     def select_input_file(e):
-        file_dialog.pick_files()
+        file_dialog.pick_files(allow_multiple=True)  # ここで複数ファイル選択を許可
 
     def select_output_directory(e):
         dir_dialog.get_directory_path()
 
     def convert_audio(e):
-        input_file_path = input_file.value
         output_dir_path = output_dir.value
         bitrate_value = bitrate.value
         sampling_rate_value = sampling_rate.value
         file_format_value = file_format.value
         bit_depth_value = bit_depth.value
 
-        if not input_file_path or not output_dir_path or not sampling_rate_value or not file_format_value or (file_format_value == "wav" and not bit_depth_value):
+        if not selected_files or not output_dir_path or not sampling_rate_value or not file_format_value or (file_format_value == "wav" and not bit_depth_value):
             page.snack_bar = ft.SnackBar(ft.Text("すべてのフィールドを入力してください"), open=True)
             page.update()
             return
@@ -48,28 +56,29 @@ def main(page: ft.Page):
                 page.update()
                 return
 
-        try:
-            audio = AudioSegment.from_file(input_file_path)
-            audio = audio.set_frame_rate(int(sampling_rate_value))
-            
-            input_file_name = os.path.splitext(os.path.basename(input_file_path))[0]
-            if file_format_value == "wav":
-                if bit_depth_value == "8":
-                    audio = audio.set_sample_width(1)
-                elif bit_depth_value == "16":
-                    audio = audio.set_sample_width(2)
-                output_file_name = f"{input_file_name}-{sampling_rate_value}-{bit_depth_value}.{file_format_value}"
-            else:
-                output_file_name = f"{input_file_name}-{sampling_rate_value}-{bitrate_value}.{file_format_value}"
-            
-            output_file_path = os.path.join(output_dir_path, output_file_name)
-            audio.export(output_file_path, format=file_format_value, bitrate=bitrate_value if file_format_value != "wav" else None)
-            
-            page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換されました: {output_file_path}"), open=True)
-            page.update()
-        except Exception as e:
-            page.snack_bar = ft.SnackBar(ft.Text(f"変換中にエラーが発生しました: {e}"), open=True)
-            page.update()
+        for file in selected_files:
+            try:
+                audio = AudioSegment.from_file(file.path)
+                audio = audio.set_frame_rate(int(sampling_rate_value))
+                
+                input_file_name = os.path.splitext(os.path.basename(file.path))[0]
+                if file_format_value == "wav":
+                    if bit_depth_value == "8":
+                        audio = audio.set_sample_width(1)
+                    elif bit_depth_value == "16":
+                        audio = audio.set_sample_width(2)
+                    output_file_name = f"{input_file_name}-{sampling_rate_value}-{bit_depth_value}.{file_format_value}"
+                else:
+                    output_file_name = f"{input_file_name}-{sampling_rate_value}-{bitrate_value}.{file_format_value}"
+                
+                output_file_path = os.path.join(output_dir_path, output_file_name)
+                audio.export(output_file_path, format=file_format_value, bitrate=bitrate_value if file_format_value != "wav" else None)
+                
+                page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換されました: {output_file_path}"), open=True)
+                page.update()
+            except Exception as e:
+                page.snack_bar = ft.SnackBar(ft.Text(f"変換中にエラーが発生しました: {e}"), open=True)
+                page.update()
 
     def on_format_change(e):
         if file_format.value == "wav":
@@ -80,7 +89,6 @@ def main(page: ft.Page):
             bit_depth.visible = False
         page.update()
 
-    input_file = ft.TextField(label="入力ファイル",value=os.path.expanduser("./sample.wav"), read_only=True, width=400,)
     output_dir = ft.TextField(label="出力ディレクトリ", value=os.path.expanduser("~/Documents/lofizer"), read_only=True, width=400,)
     bitrate = ft.Dropdown(
         label="ビットレート",
@@ -134,18 +142,27 @@ def main(page: ft.Page):
         on_change=on_format_change
     )
 
+    file_list = ft.ListView(padding=0, spacing=4)
+
     # 初期表示設定
     on_format_change(None)
 
     page.padding = 0  # 余白をゼロに設定
     page.margin = 0   # 余白をゼロに設定
     page.window.width = 680
-    page.window.height = 380
+    page.window.height = "auto"
     ui = ft.ListView (
         padding = 16,
         spacing = 22,
         controls =[
-            ft.Row([input_file, ft.ElevatedButton("入力ファイルを選択", on_click=select_input_file)], expand=True),
+            ft.ListView(
+                padding = 0,
+                spacing = 8,
+                controls = [
+                    ft.ElevatedButton("入力ファイルを選択", on_click=select_input_file, width=200),
+                    file_list,
+                ],
+            ),
             ft.Row([output_dir, ft.ElevatedButton("出力ディレクトリを選択", on_click=select_output_directory)], expand=True),
             ft.Row([file_format, sampling_rate, bitrate, bit_depth,  ], expand=True), 
             ft.ElevatedButton("変換", on_click=convert_audio, width=200, height=50)
