@@ -56,6 +56,7 @@ def main(page: ft.Page):
             if file_format_value == "wav":
                 if bit_depth_value == "8":
                     audio = audio.set_sample_width(1)
+                elif bit_depth_value == "16":
                     audio = audio.set_sample_width(2)
                 output_file_name = f"{input_file_name}-{sampling_rate_value}-{bit_depth_value}.{file_format_value}"
             else:
