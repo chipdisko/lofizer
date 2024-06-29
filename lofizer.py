@@ -139,17 +139,16 @@ def main(page: ft.Page):
 
     page.padding = 0  # 余白をゼロに設定
     page.margin = 0   # 余白をゼロに設定
-    page.window_width = 680
-    page.window_height = 380
+    page.window.width = 680
+    page.window.height = 380
     ui = ft.ListView (
         padding = 16,
         spacing = 22,
         controls =[
-          ft.Row([input_file, ft.ElevatedButton("入力ファイルを選択", on_click=select_input_file)], expand=True),
-          ft.Row([output_dir, ft.ElevatedButton("出力ディレクトリを選択", on_click=select_output_directory)], expand=True),
-          ft.Row([file_format, sampling_rate, bitrate, bit_depth,  ], expand=True), 
-          ft.ElevatedButton("変換", on_click=convert_audio, width=200, height=50)
-            
+            ft.Row([input_file, ft.ElevatedButton("入力ファイルを選択", on_click=select_input_file)], expand=True),
+            ft.Row([output_dir, ft.ElevatedButton("出力ディレクトリを選択", on_click=select_output_directory)], expand=True),
+            ft.Row([file_format, sampling_rate, bitrate, bit_depth,  ], expand=True), 
+            ft.ElevatedButton("変換", on_click=convert_audio, width=200, height=50)
         ]
     )
     page.add(ui)
