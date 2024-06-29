@@ -51,12 +51,18 @@ def main(page: ft.Page):
         try:
             audio = AudioSegment.from_file(input_file_path)
             audio = audio.set_frame_rate(int(sampling_rate_value))
-            output_file_path = os.path.join(output_dir_path, f"output_audio_low_bitrate.{file_format_value}")
             
+            input_file_name = os.path.splitext(os.path.basename(input_file_path))[0]
             if file_format_value == "wav":
-                audio.export(output_file_path, format=file_format_value, parameters=["-acodec", "pcm_s" + bit_depth_value])
+                if bit_depth_value == "8":
+                    audio = audio.set_sample_width(1)
+                    audio = audio.set_sample_width(2)
+                output_file_name = f"{input_file_name}-{sampling_rate_value}-{bit_depth_value}.{file_format_value}"
             else:
-                audio.export(output_file_path, format=file_format_value, bitrate=bitrate_value)
+                output_file_name = f"{input_file_name}-{sampling_rate_value}-{bitrate_value}.{file_format_value}"
+            
+            output_file_path = os.path.join(output_dir_path, output_file_name)
+            audio.export(output_file_path, format=file_format_value, bitrate=bitrate_value if file_format_value != "wav" else None)
             
             page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換されました: {output_file_path}"), open=True)
             page.update()
@@ -73,7 +79,7 @@ def main(page: ft.Page):
             bit_depth.visible = False
         page.update()
 
-    input_file = ft.TextField(label="入力ファイル", read_only=True, width=400,)
+    input_file = ft.TextField(label="入力ファイル",value=os.path.expanduser("./sample.wav"), read_only=True, width=400,)
     output_dir = ft.TextField(label="出力ディレクトリ", value=os.path.expanduser("~/Documents/lofizer"), read_only=True, width=400,)
     bitrate = ft.Dropdown(
         label="ビットレート",
@@ -95,9 +101,8 @@ def main(page: ft.Page):
     bit_depth = ft.Dropdown(
         label="ビット深度",
         options=[
+            ft.dropdown.Option("8"),
             ft.dropdown.Option("16"),
-            ft.dropdown.Option("24"),
-            ft.dropdown.Option("32")
         ],
         value="16",
         width=200,
