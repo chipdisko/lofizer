@@ -25,6 +25,14 @@ def main(page: ft.Page):
             output_dir.value = e.path
             page.update()
 
+    def open_output_directory(e):
+        output_dir_path = output_dir.value
+        if os.path.exists(output_dir_path):
+            os.system(f'open "{output_dir_path}"')
+        else:
+            page.snack_bar = ft.SnackBar(ft.Text("出力ディレクトリが存在しません"), open=True)
+            page.update()
+
     file_dialog = ft.FilePicker(on_result=on_input_file_selected)
     dir_dialog = ft.FilePicker(on_result=on_output_dir_selected)
     page.overlay.extend([file_dialog, dir_dialog])  # ここでFilePickerをページに追加
@@ -74,7 +82,7 @@ def main(page: ft.Page):
                 output_file_path = os.path.join(output_dir_path, output_file_name)
                 audio.export(output_file_path, format=file_format_value, bitrate=bitrate_value if file_format_value != "wav" else None)
                 
-                page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換されました: {output_file_path}"), open=True)
+                page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換さ���ました: {output_file_path}"), open=True)
                 page.update()
             except Exception as e:
                 page.snack_bar = ft.SnackBar(ft.Text(f"変換中にエラーが発生しました: {e}"), open=True)
@@ -89,7 +97,7 @@ def main(page: ft.Page):
             bit_depth.visible = False
         page.update()
 
-    output_dir = ft.TextField(label="出力ディレクトリ", value=os.path.expanduser("~/Documents/lofizer"), read_only=True, width=400,)
+    output_dir = ft.TextField(label="出力ディレクトリ", value=os.path.expanduser("~/Documents/lofizer"), read_only=True, expand=True,)
     bitrate = ft.Dropdown(
         label="ビットレート",
         options=[
@@ -153,7 +161,7 @@ def main(page: ft.Page):
     page.window.height = "auto"
     ui = ft.ListView (
         padding = 16,
-        spacing = 22,
+        spacing = 30,
         controls =[
             ft.ListView(
                 padding = 0,
@@ -163,7 +171,19 @@ def main(page: ft.Page):
                     file_list,
                 ],
             ),
-            ft.Row([output_dir, ft.ElevatedButton("出力ディレクトリを選択", on_click=select_output_directory)], expand=True),
+            ft.ListView(
+                padding = 0,
+                spacing = 8,
+                controls = [
+                    ft.Row([
+                        output_dir, 
+                    ], expand=True),
+                    ft.Row([
+                        ft.ElevatedButton("出力ディレクトリを選択", on_click=select_output_directory),
+                        ft.ElevatedButton("出力ディレクトリを開く", on_click=open_output_directory)  # 追加
+                    ]),
+                ]
+            ),
             ft.Row([file_format, sampling_rate, bitrate, bit_depth,  ], expand=True), 
             ft.ElevatedButton("変換", on_click=convert_audio, width=200, height=50)
         ]
