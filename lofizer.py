@@ -82,7 +82,7 @@ def main(page: ft.Page):
                 output_file_path = os.path.join(output_dir_path, output_file_name)
                 audio.export(output_file_path, format=file_format_value, bitrate=bitrate_value if file_format_value != "wav" else None)
                 
-                page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換さ���ました: {output_file_path}"), open=True)
+                page.snack_bar = ft.SnackBar(ft.Text(f"ファイルが正常に変換されました: {output_file_path}"), open=True)
                 page.update()
             except Exception as e:
                 page.snack_bar = ft.SnackBar(ft.Text(f"変換中にエラーが発生しました: {e}"), open=True)
